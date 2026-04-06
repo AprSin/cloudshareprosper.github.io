@@ -123,8 +123,8 @@ export default {
     return {
       timeRange: 'month',
       totalProjects: 128,
-      totalAmount: 3560,
-      successRate: 98.5,
+      totalAmount: 580,
+      successRate: 80,
       activeUsers: 2500,
       transactionDetails: [
         {
