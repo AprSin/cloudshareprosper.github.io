@@ -27,7 +27,7 @@
     </div>
     
     <div class="project-list">
-      <div v-for="project in filteredProjects" :key="project.id" class="project-card">
+      <div v-for="project in projects" :key="project.id" class="project-card">
         <div class="project-header">
           <h2>{{ project.title }}</h2>
           <div class="project-tags">
@@ -40,7 +40,7 @@
           <div class="project-details">
             <div class="detail-item">
               <span class="detail-label">项目编号:</span>
-              <span class="detail-value">{{ project.id }}</span>
+              <span class="detail-value">{{ project.projectId }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">所在地区:</span>
@@ -66,7 +66,7 @@
       </div>
     </div>
     
-    <div v-if="filteredProjects.length === 0" class="empty-state">
+    <div v-if="projects.length === 0" class="empty-state">
       没有更多了哦
     </div>
     
@@ -79,6 +79,8 @@
 </template>
 
 <script>
+import { projectApi } from '../api';
+
 export default {
   name: 'Projects',
   data() {
@@ -90,91 +92,44 @@ export default {
         area: '',
         date: ''
       },
-      projects: [
-        {
-          id: 'SQ2026001',
-          title: '河南省洛阳市宜阳县香鹿山镇赵老庄村迷迭香田地交易',
-          description: '本项目为洛阳市宜阳县香鹿山镇赵老庄村迷迭香田地交易项目。',
-          area: '河南省洛阳市宜阳县香鹿山镇赵老庄村6组18号',
-          date: '2025-4-15',
-          contactPerson: '赵旭乐',
-          contactInfo: '18768442884',
-          isHot: true,
-          isNew: false
-        },
-        {
-          id: 'SQ2026002',
-          title: '河南省民权县向阳路与和平路交叉口东翰林世家门面房',
-          description: '本项目为民权县向阳路与和平路交叉口东翰林世家门面房，适合兴办小型加工企业。',
-          area: '民权县向阳路与和平路交叉口',
-          date: '2026-4-1',
-          contactPerson: '魏敬政',
-          contactInfo: '13569325881',
-          isHot: false,
-          isNew: false
-        },
-        {
-          id: 'SQ2026003',
-          title: '商丘市民权县龙塘镇汤庄村委侯店村临街宅基地出租',
-          description: '本项目为商丘市民权县龙塘镇汤庄村委侯店村临街宅基地出租项目，适合仓储或小型加工。',
-          area: '商丘市民权县龙塘镇汤庄村委侯店村',
-          date: '2025-4-12',
-          contactPerson: '魏敬政',
-          contactInfo: '13569325881',
-          isHot: false,
-          isNew: false
-        }
-      ]
+      projects: [],
+      total: 0
     }
   },
   computed: {
-    filteredProjects() {
-      let filtered = this.projects
-      
-      if (this.filter.type) {
-        filtered = filtered.filter(project => project.title.includes(this.filter.type))
-      }
-      
-      if (this.filter.area) {
-        filtered = filtered.filter(project => project.area.includes(this.filter.area))
-      }
-      
-      if (this.filter.date) {
-        filtered = filtered.filter(project => project.date === this.filter.date)
-      }
-      
-      // 分页
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return filtered.slice(start, end)
-    },
     totalPages() {
-      let filtered = this.projects
-      
-      if (this.filter.type) {
-        filtered = filtered.filter(project => project.title.includes(this.filter.type))
-      }
-      
-      if (this.filter.area) {
-        filtered = filtered.filter(project => project.area.includes(this.filter.area))
-      }
-      
-      if (this.filter.date) {
-        filtered = filtered.filter(project => project.date === this.filter.date)
-      }
-      
-      return Math.ceil(filtered.length / this.pageSize)
+      return Math.ceil(this.total / this.pageSize)
     }
   },
+  mounted() {
+    this.getProjects();
+  },
   methods: {
+    async getProjects() {
+      try {
+        const response = await projectApi.getAllProjects({
+          page: this.currentPage,
+          pageSize: this.pageSize,
+          type: this.filter.type,
+          status: ''
+        });
+        this.projects = response.projects;
+        this.total = response.total;
+      } catch (error) {
+        console.error('获取交易项目失败:', error);
+        alert('获取交易项目失败，请刷新页面重试');
+      }
+    },
     prevPage() {
       if (this.currentPage > 1) {
-        this.currentPage--
+        this.currentPage--;
+        this.getProjects();
       }
     },
     nextPage() {
       if (this.currentPage < this.totalPages) {
-        this.currentPage++
+        this.currentPage++;
+        this.getProjects();
       }
     },
     resetFilter() {
@@ -182,8 +137,9 @@ export default {
         type: '',
         area: '',
         date: ''
-      }
-      this.currentPage = 1
+      };
+      this.currentPage = 1;
+      this.getProjects();
     }
   }
 }

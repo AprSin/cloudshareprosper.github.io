@@ -117,86 +117,128 @@
 </template>
 
 <script>
+import { transactionApi } from '../api';
+
 export default {
   name: 'Data',
   data() {
     return {
       timeRange: 'month',
-      totalProjects: 128,
-      totalAmount: 580,
-      successRate: 80,
-      activeUsers: 2500,
-      transactionDetails: [
-        {
-          id: 'SQ2026001',
-          name: '商丘市梁园区谢集镇杨波村宅基地出租',
-          type: '宅基地',
-          amount: 120,
-          date: '2024-12-15',
-          status: 'success',
-          statusText: '交易成功'
-        },
-        {
-          id: 'SQ2026002',
-          name: '商丘市梁园区谢集镇东街村村中心广场西侧厂房出租',
-          type: '厂房',
-          amount: 85,
-          date: '2024-12-10',
-          status: 'success',
-          statusText: '交易成功'
-        },
-        {
-          id: 'SQ2026003',
-          name: '商丘市梁园区谢集镇常庄村村部北侧厂房出租',
-          type: '厂房',
-          amount: 75,
-          date: '2024-12-05',
-          status: 'success',
-          statusText: '交易成功'
-        },
-        {
-          id: 'SQ2026004',
-          name: '商丘市梁园区谢集镇王步口村闲置厂房出租',
-          type: '厂房',
-          amount: 95,
-          date: '2024-12-01',
-          status: 'processing',
-          statusText: '交易中'
-        },
-        {
-          id: 'SQ2026005',
-          name: '商丘市梁园区谢集镇朱庄寨村主干道旁临街厂房出租',
-          type: '厂房',
-          amount: 110,
-          date: '2024-11-25',
-          status: 'success',
-          statusText: '交易成功'
-        }
-      ]
+      totalProjects: 0,
+      totalAmount: 0,
+      successRate: 0,
+      activeUsers: 0,
+      transactionDetails: [],
+      transactionStats: {
+        typeDistribution: [],
+        monthlyTrend: []
+      }
     }
   },
   mounted() {
-    this.initCharts()
+    this.getTransactionStats();
   },
   methods: {
+    async getTransactionStats() {
+      try {
+        const response = await transactionApi.getTransactionStats();
+        this.totalAmount = response.totalAmount;
+        this.successRate = response.successRate;
+        this.transactionStats = {
+          typeDistribution: response.typeDistribution,
+          monthlyTrend: response.monthlyTrend
+        };
+        // 模拟数据
+        this.totalProjects = 128;
+        this.activeUsers = 2500;
+        this.transactionDetails = [
+          {
+            id: 'SQ2026001',
+            name: '商丘市梁园区谢集镇杨波村宅基地出租',
+            type: '宅基地',
+            amount: 120,
+            date: '2024-12-15',
+            status: 'success',
+            statusText: '交易成功'
+          },
+          {
+            id: 'SQ2026002',
+            name: '商丘市梁园区谢集镇东街村村中心广场西侧厂房出租',
+            type: '厂房',
+            amount: 85,
+            date: '2024-12-10',
+            status: 'success',
+            statusText: '交易成功'
+          },
+          {
+            id: 'SQ2026003',
+            name: '商丘市梁园区谢集镇常庄村村部北侧厂房出租',
+            type: '厂房',
+            amount: 75,
+            date: '2024-12-05',
+            status: 'success',
+            statusText: '交易成功'
+          },
+          {
+            id: 'SQ2026004',
+            name: '商丘市梁园区谢集镇王步口村闲置厂房出租',
+            type: '厂房',
+            amount: 95,
+            date: '2024-12-01',
+            status: 'processing',
+            statusText: '交易中'
+          },
+          {
+            id: 'SQ2026005',
+            name: '商丘市梁园区谢集镇朱庄寨村主干道旁临街厂房出租',
+            type: '厂房',
+            amount: 110,
+            date: '2024-11-25',
+            status: 'success',
+            statusText: '交易成功'
+          }
+        ];
+        this.initCharts();
+      } catch (error) {
+        console.error('获取交易统计数据失败:', error);
+        alert('获取交易统计数据失败，请刷新页面重试');
+      }
+    },
     initCharts() {
       // 交易趋势图表
       const trendCtx = document.getElementById('transactionTrendChart')
       if (trendCtx) {
+        // 处理月度趋势数据
+        let labels = [];
+        let projectData = [];
+        let amountData = [];
+        
+        if (this.transactionStats.monthlyTrend.length > 0) {
+          this.transactionStats.monthlyTrend.forEach(item => {
+            labels.push(item.month);
+            amountData.push(item.amount);
+            projectData.push(Math.floor(item.amount / 50)); // 模拟项目数
+          });
+        } else {
+          labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+          projectData = [8, 12, 15, 10, 18, 20, 15, 22, 18, 25, 30, 35];
+          amountData = [200, 350, 420, 300, 500, 550, 480, 600, 520, 700, 850, 950];
+        }
+        
         new Chart(trendCtx, {
           type: 'line',
           data: {
-            labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+            labels: labels,
             datasets: [{
               label: '交易项目数',
-              data: [8, 12, 15, 10, 18, 20, 15, 22, 18, 25, 30, 35],
+              data: projectData,
               borderColor: '#4CAF50',
               backgroundColor: 'rgba(76, 175, 80, 0.1)',
               tension: 0.4,
               fill: true
             }, {
               label: '交易金额 (万元)',
-              data: [200, 350, 420, 300, 500, 550, 480, 600, 520, 700, 850, 950],
+              data: amountData,
               borderColor: '#2196F3',
               backgroundColor: 'rgba(33, 150, 243, 0.1)',
               tension: 0.4,
@@ -242,12 +284,25 @@ export default {
       // 交易类型分布图表
       const typeCtx = document.getElementById('transactionTypeChart')
       if (typeCtx) {
+        let labels = [];
+        let data = [];
+        
+        if (this.transactionStats.typeDistribution.length > 0) {
+          this.transactionStats.typeDistribution.forEach(item => {
+            labels.push(item.type === 'project' ? '项目' : '农产品');
+            data.push(item.count);
+          });
+        } else {
+          labels = ['厂房', '宅基地', '土地', '其他'];
+          data = [45, 30, 20, 5];
+        }
+        
         new Chart(typeCtx, {
           type: 'pie',
           data: {
-            labels: ['厂房', '宅基地', '土地', '其他'],
+            labels: labels,
             datasets: [{
-              data: [45, 30, 20, 5],
+              data: data,
               backgroundColor: [
                 '#4CAF50',
                 '#2196F3',
